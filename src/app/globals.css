@@ -1,26 +1,282 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Blue Primary Color Palette - Layered Depth System */
+    --primary: 217 91% 30%;          /* Deep Blue - Base */
+    --primary-dark: 217 91% 20%;     /* Darker Blue - Background/Depth */
+    --primary-light: 217 91% 40%;    /* Lighter Blue - Elevated */
+    --primary-lighter: 217 91% 50%;  /* Even Lighter - Hover/Focus */
+    --primary-foreground: 0 0% 100%; /* White text on blue */
+    
+    /* Gold Accent Palette */
+    --accent: 43 96% 56%;            /* Rich Gold */
+    --accent-dark: 43 96% 46%;       /* Dark Gold - Shadows */
+    --accent-light: 43 96% 66%;      /* Light Gold - Highlights */
+    --accent-foreground: 217 91% 20%; /* Dark Blue text on gold */
+    
+    /* White/Neutral Palette - Layered */
+    --background: 0 0% 100%;         /* Pure White - Base */
+    --background-elevated: 217 50% 98%; /* Slightly Blue-tinted White - Layer 1 */
+    --background-elevated-2: 217 50% 96%; /* More Blue-tinted - Layer 2 */
+    --foreground: 217 33% 17%;       /* Dark Blue-Gray text */
+    
+    /* Card System - Depth Layers */
+    --card: 0 0% 100%;               /* White cards - Base */
+    --card-elevated: 217 50% 98%;    /* Elevated cards - Layer 1 */
+    --card-foreground: 217 33% 17%;
+    
+    /* Secondary Colors */
+    --secondary: 217 50% 96%;        /* Light Blue-Gray */
+    --secondary-foreground: 217 91% 30%;
+    
+    /* Muted Colors */
+    --muted: 217 30% 94%;
+    --muted-foreground: 217 15% 45%;
+    
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 217 33% 17%;
+    
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Border & Input */
+    --border: 217 30% 88%;
+    --input: 217 30% 88%;
+    --ring: 217 91% 50%;
+    
+    /* Radius */
+    --radius: 0.75rem;
+    
+    /* Charts - Blue & Gold Theme */
+    --chart-1: 217 91% 50%;
+    --chart-2: 43 96% 56%;
+    --chart-3: 217 91% 35%;
+    --chart-4: 43 96% 46%;
+    --chart-5: 217 50% 70%;
+  }
+
+  .dark {
+    /* Dark Mode - Deep Blue Theme */
+    --primary: 217 91% 60%;
+    --primary-dark: 217 91% 50%;
+    --primary-light: 217 91% 70%;
+    --primary-lighter: 217 91% 80%;
+    --primary-foreground: 217 91% 10%;
+    
+    --accent: 43 96% 66%;
+    --accent-dark: 43 96% 56%;
+    --accent-light: 43 96% 76%;
+    --accent-foreground: 217 91% 10%;
+    
+    --background: 217 50% 8%;
+    --background-elevated: 217 50% 12%;
+    --background-elevated-2: 217 50% 16%;
+    --foreground: 217 20% 95%;
+    
+    --card: 217 50% 10%;
+    --card-elevated: 217 50% 14%;
+    --card-foreground: 217 20% 95%;
+    
+    --secondary: 217 50% 18%;
+    --secondary-foreground: 217 91% 80%;
+    
+    --muted: 217 30% 20%;
+    --muted-foreground: 217 15% 65%;
+    
+    --popover: 217 50% 10%;
+    --popover-foreground: 217 20% 95%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 217 30% 25%;
+    --input: 217 30% 25%;
+    --ring: 217 91% 60%;
+    
+    --chart-1: 217 91% 60%;
+    --chart-2: 43 96% 66%;
+    --chart-3: 217 91% 45%;
+    --chart-4: 43 96% 56%;
+    --chart-5: 217 50% 70%;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: hsl(var(--border));
+  }
+  
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Two-Layer Shadow System - Following Enhancement Principles */
+@layer utilities {
+  /* Subtle Elevation - Small shadow */
+  .shadow-subtle {
+    box-shadow: 
+      0 1px 2px 0 hsl(217 91% 20% / 0.05),    /* Light top shadow */
+      0 2px 4px -1px hsl(217 91% 20% / 0.1);  /* Dark bottom shadow */
+  }
+  
+  /* Standard Elevation - Medium shadow */
+  .shadow-elevated {
+    box-shadow: 
+      0 2px 4px -1px hsl(217 91% 20% / 0.06),   /* Light top shadow */
+      0 8px 16px -4px hsl(217 91% 20% / 0.15);  /* Dark bottom shadow */
+  }
+  
+  /* Prominent Elevation - Large shadow (hover/focus) */
+  .shadow-prominent {
+    box-shadow: 
+      0 4px 8px -2px hsl(217 91% 20% / 0.08),    /* Light top shadow */
+      0 16px 32px -8px hsl(217 91% 20% / 0.2);   /* Dark bottom shadow */
+  }
+  
+  /* Gold Accent Glow */
+  .shadow-gold {
+    box-shadow: 
+      0 2px 8px -1px hsl(43 96% 56% / 0.2),
+      0 8px 16px -4px hsl(43 96% 46% / 0.3);
+  }
+  
+  /* Inner glow effect - Shiny, elevated */
+  .inner-glow {
+    box-shadow: 
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.15),    /* Light on top */
+      inset 0 -1px 0 0 hsl(217 91% 20% / 0.1);  /* Dark on bottom */
+  }
+  
+  /* Depth layers - Stack effect */
+  .depth-layer-1 {
+    background: hsl(var(--background-elevated));
+  }
+  
+  .depth-layer-2 {
+    background: hsl(var(--background-elevated-2));
+  }
+  
+  /* Gradient elevation effect */
+  .gradient-elevation {
+    background: linear-gradient(
+      to bottom,
+      hsl(var(--card)) 0%,
+      hsl(var(--card-elevated)) 100%
+    );
+  }
+  
+  /* Blue gradient with gold accent */
+  .gradient-primary {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--primary-light)) 100%
+    );
+  }
+  
+  .gradient-accent {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--accent)) 0%,
+      hsl(var(--accent-light)) 100%
+    );
+  }
+  
+  /* Hover transitions with depth */
+  .hover-lift {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Enhanced Component Styles */
+@layer components {
+  /* Nav Link Enhancement */
+  .nav-link {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .nav-link:hover {
+    box-shadow: 
+      0 1px 2px 0 hsl(217 91% 20% / 0.05),
+      0 2px 4px -1px hsl(217 91% 20% / 0.1);
+    transform: translateY(-1px);
+  }
+  
+  .nav-link-active {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 
+      0 2px 4px -1px hsl(217 91% 20% / 0.06),
+      0 8px 16px -4px hsl(217 91% 20% / 0.15);
+  }
+  
+  /* Card Enhancement with Depth */
+  .card-enhanced {
+    background: hsl(var(--card));
+    border-radius: 0.75rem;
+    box-shadow: 
+      0 2px 4px -1px hsl(217 91% 20% / 0.06),
+      0 8px 16px -4px hsl(217 91% 20% / 0.15);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .card-enhanced:hover {
+    box-shadow: 
+      0 4px 8px -2px hsl(217 91% 20% / 0.08),
+      0 16px 32px -8px hsl(217 91% 20% / 0.2);
+    transform: translateY(-2px);
+  }
+  
+  /* Button Enhancement */
+  .btn-primary-enhanced {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
+    color: hsl(var(--primary-foreground));
+    box-shadow: 
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.15),
+      inset 0 -1px 0 0 hsl(217 91% 20% / 0.1),
+      0 2px 4px -1px hsl(217 91% 20% / 0.06),
+      0 8px 16px -4px hsl(217 91% 20% / 0.15);
+  }
+  
+  .btn-primary-enhanced:hover {
+    box-shadow: 
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.15),
+      inset 0 -1px 0 0 hsl(217 91% 20% / 0.1),
+      0 4px 8px -2px hsl(217 91% 20% / 0.08),
+      0 16px 32px -8px hsl(217 91% 20% / 0.2);
+  }
+  
+  .btn-accent-enhanced {
+    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent-light)) 100%);
+    color: hsl(var(--accent-foreground));
+    box-shadow: 
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.15),
+      inset 0 -1px 0 0 hsl(217 91% 20% / 0.1),
+      0 2px 8px -1px hsl(43 96% 56% / 0.2),
+      0 8px 16px -4px hsl(43 96% 46% / 0.3);
+  }
+  
+  .btn-accent-enhanced:hover {
+    box-shadow: 
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.15),
+      inset 0 -1px 0 0 hsl(217 91% 20% / 0.1),
+      0 4px 8px -2px hsl(217 91% 20% / 0.08),
+      0 16px 32px -8px hsl(217 91% 20% / 0.2);
+  }
 }
