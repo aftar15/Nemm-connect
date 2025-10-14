@@ -1,7 +1,7 @@
 'use client'
 
 // =====================================================
-// QR Code Scanner Component (Attendees)
+// QR Code Scanner Component (Attendees) - Enhanced
 // =====================================================
 
 import { useState, useEffect, useRef } from 'react'
@@ -9,9 +9,14 @@ import { Html5Qrcode } from 'html5-qrcode'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CheckCircle2, QrCode, Camera, AlertCircle, Upload, Image as ImageIcon } from 'lucide-react'
+import { CheckCircle2, QrCode, Camera, AlertCircle, Upload, Image as ImageIcon, Info } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { QRCheckInResponse } from '@/types/attendance.types'
+
+interface CameraDevice {
+  id: string
+  label: string
+}
 
 export function QRScanner() {
   const [isScanning, setIsScanning] = useState(false)
@@ -22,29 +27,77 @@ export function QRScanner() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [hasCamera, setHasCamera] = useState(true)
   const [cameraError, setCameraError] = useState<string | null>(null)
+  const [cameras, setCameras] = useState<CameraDevice[]>([])
+  const [selectedCamera, setSelectedCamera] = useState<string>('environment')
+  const [permissionStatus, setPermissionStatus] = useState<'unknown' | 'granted' | 'denied'>('unknown')
 
   useEffect(() => {
-    // Check if camera is available and if HTTPS is required
-    Html5Qrcode.getCameras()
-      .then(cameras => {
-        setHasCamera(cameras.length > 0)
-      })
-      .catch((err) => {
-        setHasCamera(false)
-        if (window.location.protocol === 'http:') {
-          setCameraError('Camera requires HTTPS. Use "Upload Image" instead.')
-        } else {
-          setCameraError('Camera access denied or not available.')
-        }
-      })
+    checkCameraAccess()
 
     return () => {
       // Cleanup scanner on unmount
       if (scannerRef.current?.isScanning) {
-        scannerRef.current.stop()
+        scannerRef.current.stop().catch(console.error)
       }
     }
   }, [])
+
+  const checkCameraAccess = async () => {
+    try {
+      console.log('🔍 Checking camera access...')
+      console.log('Protocol:', window.location.protocol)
+      console.log('URL:', window.location.href)
+
+      // Check if running on HTTPS
+      if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
+        setCameraError('⚠️ Camera requires HTTPS. Use "Upload Image" instead.')
+        setHasCamera(false)
+        return
+      }
+
+      // Test basic camera access first
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        console.log('✅ Camera permission granted!')
+        stream.getTracks().forEach(track => track.stop()) // Stop test stream
+        setPermissionStatus('granted')
+      } catch (permError: any) {
+        console.error('❌ Camera permission error:', permError.name, permError.message)
+        setPermissionStatus('denied')
+        
+        if (permError.name === 'NotAllowedError') {
+          setCameraError('🚫 Camera permission denied. Please allow camera access in your browser settings.')
+        } else if (permError.name === 'NotFoundError') {
+          setCameraError('📷 No camera found on this device.')
+        } else if (permError.name === 'NotReadableError') {
+          setCameraError('⚠️ Camera is in use by another application.')
+        } else {
+          setCameraError(`❌ Camera error: ${permError.message}`)
+        }
+        setHasCamera(false)
+        return
+      }
+
+      // Get available cameras
+      const devices = await Html5Qrcode.getCameras()
+      console.log('📷 Found cameras:', devices)
+      
+      if (devices.length === 0) {
+        setCameraError('📷 No camera found on this device.')
+        setHasCamera(false)
+        return
+      }
+
+      setCameras(devices.map(d => ({ id: d.id, label: d.label || `Camera ${d.id}` })))
+      setHasCamera(true)
+      setCameraError(null)
+      
+    } catch (err: any) {
+      console.error('❌ Camera check failed:', err)
+      setHasCamera(false)
+      setCameraError(`Error checking camera: ${err.message}`)
+    }
+  }
 
   const startScanning = async () => {
     setIsScanning(true)
@@ -52,22 +105,83 @@ export function QRScanner() {
     setResult(null)
 
     try {
+      console.log('🎥 Starting scanner...')
+      
+      // Wait for DOM element to be available
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Check if element exists
+      const element = document.getElementById('qr-reader')
+      if (!element) {
+        throw new Error('QR reader element not found. Please try again.')
+      }
+      
       const scanner = new Html5Qrcode('qr-reader')
       scannerRef.current = scanner
 
+      // Determine camera ID to use
+      let cameraId: string | undefined
+      
+      if (cameras.length > 0 && selectedCamera !== 'environment') {
+        // Use specific camera if selected
+        cameraId = selectedCamera
+        console.log('Using selected camera:', cameraId)
+      } else {
+        // Try to find back camera first
+        const backCamera = cameras.find(c => 
+          c.label.toLowerCase().includes('back') || 
+          c.label.toLowerCase().includes('rear') ||
+          c.label.toLowerCase().includes('environment')
+        )
+        
+        if (backCamera) {
+          cameraId = backCamera.id
+          console.log('Using back camera:', cameraId)
+        } else if (cameras.length > 0) {
+          cameraId = cameras[0].id
+          console.log('Using first available camera:', cameraId)
+        }
+      }
+
+      // Prepare camera constraints
+      const cameraConfig = cameraId 
+        ? cameraId 
+        : { facingMode: 'environment' } // Fallback to facingMode
+
+      console.log('Camera config:', cameraConfig)
+
       await scanner.start(
-        { facingMode: 'environment' }, // Use back camera
+        cameraConfig,
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 }
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
         },
         onScanSuccess,
         onScanError
       )
+      
+      console.log('✅ Scanner started successfully!')
     } catch (err: any) {
-      console.error('Scanner error:', err)
-      setError('Failed to start camera. Please check camera permissions.')
+      console.error('❌ Scanner start error:', err)
+      
+      let errorMessage = 'Failed to start camera. '
+      
+      if (err.name === 'NotAllowedError' || err.message?.includes('Permission')) {
+        errorMessage += 'Please allow camera access in your browser settings.'
+      } else if (err.name === 'NotFoundError') {
+        errorMessage += 'No camera found.'
+      } else if (err.name === 'NotReadableError') {
+        errorMessage += 'Camera is in use by another app.'
+      } else if (err.message?.includes('facingMode')) {
+        errorMessage += 'Try selecting a different camera below.'
+      } else {
+        errorMessage += err.message || 'Unknown error.'
+      }
+      
+      setError(errorMessage)
       setIsScanning(false)
+      scannerRef.current = null
     }
   }
 
@@ -213,12 +327,70 @@ export function QRScanner() {
 
             {/* Camera Tab */}
             <TabsContent value="camera" className="space-y-4">
-              {cameraError && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{cameraError}</AlertDescription>
+              {/* Diagnostic Info */}
+              {permissionStatus !== 'unknown' && (
+                <Alert className={permissionStatus === 'granted' ? 'border-green-500 bg-green-50' : ''}>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    {permissionStatus === 'granted' ? (
+                      <>
+                        <strong>✅ Camera Access:</strong> Granted
+                        {cameras.length > 0 && ` • ${cameras.length} camera(s) found`}
+                      </>
+                    ) : (
+                      <>
+                        <strong>❌ Camera Access:</strong> {cameraError || 'Denied'}
+                      </>
+                    )}
+                  </AlertDescription>
                 </Alert>
               )}
+
+              {cameraError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="font-semibold mb-1">{cameraError}</div>
+                    {permissionStatus === 'denied' && (
+                      <div className="text-xs mt-2">
+                        <strong>How to fix:</strong>
+                        <ol className="list-decimal list-inside space-y-1 mt-1">
+                          <li>Click the camera icon (🎥) in your browser's address bar</li>
+                          <li>Select "Allow" for camera access</li>
+                          <li>Refresh this page</li>
+                        </ol>
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Camera Selection */}
+              {cameras.length > 1 && !isScanning && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Camera:</label>
+                  <select 
+                    value={selectedCamera}
+                    onChange={(e) => setSelectedCamera(e.target.value)}
+                    className="w-full p-2 border rounded-lg"
+                  >
+                    <option value="environment">Default (Back Camera)</option>
+                    {cameras.map(cam => (
+                      <option key={cam.id} value={cam.id}>
+                        {cam.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Always render the qr-reader div, but hide it when not scanning */}
+              <div className={isScanning ? 'space-y-4' : 'hidden'}>
+                <div id="qr-reader" className="rounded-lg overflow-hidden" />
+                <Button onClick={stopScanning} variant="outline" className="w-full">
+                  Stop Scanning
+                </Button>
+              </div>
 
               {!isScanning && (
                 <div className="text-center py-8">
@@ -229,20 +401,21 @@ export function QRScanner() {
                   <Button 
                     onClick={startScanning} 
                     className="w-full"
-                    disabled={!hasCamera}
+                    disabled={!hasCamera || permissionStatus === 'denied'}
                   >
                     <Camera className="h-4 w-4 mr-2" />
-                    Start Camera
+                    {permissionStatus === 'denied' ? 'Camera Access Denied' : 'Start Camera'}
                   </Button>
-                </div>
-              )}
-
-              {isScanning && (
-                <div className="space-y-4">
-                  <div id="qr-reader" className="rounded-lg overflow-hidden" />
-                  <Button onClick={stopScanning} variant="outline" className="w-full">
-                    Stop Scanning
-                  </Button>
+                  
+                  {!hasCamera && (
+                    <Button 
+                      onClick={checkCameraAccess}
+                      variant="outline" 
+                      className="w-full mt-2"
+                    >
+                      🔄 Retry Camera Access
+                    </Button>
+                  )}
                 </div>
               )}
             </TabsContent>
